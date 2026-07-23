@@ -7,6 +7,7 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
+import { toast } from '@spartan-ng/brain/sonner';
 import { CartService } from '../cart.service';
 import { Produkt } from '../models';
 
@@ -107,12 +108,11 @@ export class PridatDoKosiku {
       this.chybaVarianty.set(true);
       return;
     }
-    this.cart.pridat(
-      this.produkt(),
-      Math.max(1, Math.floor(this.mnozstvi || 1)),
-      this.varianta,
-      this.poznamka.trim() || undefined,
-    );
+    const ks = Math.max(1, Math.floor(this.mnozstvi || 1));
+    this.cart.pridat(this.produkt(), ks, this.varianta, this.poznamka.trim() || undefined);
+    toast.success('Přidáno do košíku', {
+      description: `${ks}× ${this.produkt().nazev}${this.varianta ? ' (' + this.varianta + ')' : ''}`,
+    });
     this.chybaVarianty.set(false);
     this.mnozstvi = 1;
     this.poznamka = '';

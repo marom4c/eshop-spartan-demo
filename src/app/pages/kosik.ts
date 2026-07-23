@@ -159,7 +159,9 @@ const POBOCKY = ['Třinec', 'Ostrava', 'Frýdek-Místek', 'Havířov', 'Brno', '
             </div>
             <div class="mt-4 flex justify-between">
               <button hlmBtn variant="outline" (click)="krok.set('kosik')">Zpět</button>
-              <button hlmBtn (click)="krok.set('platba')">Pokračovat k platbě</button>
+              <button hlmBtn [disabled]="doprava === 'osobni' && !pobocka" (click)="krok.set('platba')">
+                Pokračovat k platbě
+              </button>
             </div>
           </div>
 
@@ -184,6 +186,9 @@ const POBOCKY = ['Třinec', 'Ostrava', 'Frýdek-Místek', 'Havířov', 'Brno', '
                   />
                   <p hlmFieldDescription>Maximálně {{ maxKredity() | number: '1.0-0' }}.</p>
                 </hlm-field>
+                <button hlmBtn variant="outline" size="sm" class="w-fit" (click)="kredity.set(maxKredity())">
+                  Uplatnit maximum ({{ maxKredity() | number: '1.0-0' }})
+                </button>
                 <hlm-separator />
                 <dl class="flex max-w-xs flex-col gap-1 text-sm">
                   <div class="flex justify-between">

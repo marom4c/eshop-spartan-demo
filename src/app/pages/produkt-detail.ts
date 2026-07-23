@@ -7,9 +7,12 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideHeart } from '@ng-icons/lucide';
 import { CartService } from '../cart.service';
 import { KATEGORIE, PRODUKTY } from '../data';
 import { Stitek } from '../models';
+import { OblibeneService } from '../oblibene.service';
 import { PridatDoKosiku } from '../shared/pridat-do-kosiku';
 
 @Component({
@@ -24,8 +27,10 @@ import { PridatDoKosiku } from '../shared/pridat-do-kosiku';
     HlmCardImports,
     HlmDialogImports,
     HlmSeparatorImports,
+    NgIcon,
     PridatDoKosiku,
   ],
+  providers: [provideIcons({ lucideHeart })],
   template: `
     @if (produkt(); as p) {
       <div class="mx-auto w-full max-w-5xl px-4 py-6">
@@ -110,7 +115,19 @@ import { PridatDoKosiku } from '../shared/pridat-do-kosiku';
               <p class="text-sm text-green-600">Lze platit kreditem</p>
             }
 
-            <app-pridat-do-kosiku [produkt]="p" />
+            <div class="flex items-center gap-2">
+              <app-pridat-do-kosiku [produkt]="p" />
+              <button
+                hlmBtn
+                variant="outline"
+                size="icon"
+                [class.text-red-500]="oblibene.je(p.id)"
+                (click)="oblibene.prepnout(p.id)"
+                [attr.aria-label]="oblibene.je(p.id) ? 'Odebrat z oblíbených' : 'Přidat do oblíbených'"
+              >
+                <ng-icon name="lucideHeart" [class.fill-current]="oblibene.je(p.id)" />
+              </button>
+            </div>
 
             @if (p.dokumenty.length) {
               <hlm-separator class="my-2" />
@@ -137,6 +154,34 @@ import { PridatDoKosiku } from '../shared/pridat-do-kosiku';
             }
           </div>
         </div>
+
+        <!-- Související produkty -->
+        @if (souvisejici().length) {
+          <div class="mt-12">
+            <h2 class="mb-4 text-lg font-semibold">Mohlo by se hodit</h2>
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              @for (s of souvisejici(); track s.id) {
+                <a
+                  [routerLink]="['/produkt', s.id]"
+                  hlmCard
+                  class="group flex flex-col overflow-hidden pt-0 transition-shadow hover:shadow-md"
+                >
+                  <div class="aspect-square w-full bg-white p-4">
+                    <img
+                      [src]="s.obrazky[0]"
+                      [alt]="s.nazev"
+                      class="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
+                    />
+                  </div>
+                  <div hlmCardContent class="flex flex-1 flex-col gap-1">
+                    <span class="line-clamp-2 text-sm font-medium">{{ s.nazev }}</span>
+                    <span class="mt-auto font-bold">{{ s.cena | number: '1.2-2' }} Kč</span>
+                  </div>
+                </a>
+              }
+            </div>
+          </div>
+        }
       </div>
     } @else {
       <div class="mx-auto max-w-5xl px-4 py-16 text-center">
@@ -148,6 +193,7 @@ import { PridatDoKosiku } from '../shared/pridat-do-kosiku';
 })
 export class ProduktDetail {
   private readonly cart = inject(CartService);
+  protected readonly oblibene = inject(OblibeneService);
 
   /** :id z routy (withComponentInputBinding) */
   readonly id = input.required<string>();
@@ -157,6 +203,12 @@ export class ProduktDetail {
   protected readonly aktivniObrazek = computed(
     () => this.produkt()?.obrazky[this.aktivniIndex()] ?? this.produkt()?.obrazky[0],
   );
+
+  protected readonly souvisejici = computed(() => {
+    const p = this.produkt();
+    if (!p) return [];
+    return PRODUKTY.filter((x) => x.kategorieId === p.kategorieId && x.id !== p.id).slice(0, 4);
+  });
 
   protected readonly nazevKategorie = computed(
     () => KATEGORIE.find((k) => k.id === this.produkt()?.kategorieId)?.nazev ?? '',
